@@ -1,0 +1,139 @@
+package orderbook
+
+import (
+	"fmt"
+	"reflect"
+	"testing"
+)
+
+func assert(t *testing.T, a, b any) {
+	if !reflect.DeepEqual(a,b){
+		t.Errorf("%+v != %+v", a, b)
+	}
+}
+
+func TestLimit(t *testing.T) {
+	l := NewLimit(10_000)
+
+	buyOrderA := NewOrder(true, 5, 0)
+	buyOrderB := NewOrder(true, 8, 0)
+	buyOrderC := NewOrder(true, 10, 0)
+
+	l.AddOrder(buyOrderA)
+	fmt.Println(l)
+	l.AddOrder(buyOrderB)
+	fmt.Println(l)
+	l.AddOrder(buyOrderC)
+
+	l.DeleteOrder(buyOrderB)
+
+	fmt.Printf("hey %v", l)
+}
+
+func TestOrderbook(t *testing.T) {
+	ob := NewOrderbook()
+
+	buyOrder := NewOrder(true, 10, 0)
+	buyOrderA := NewOrder(true, 2000, 0)
+
+	ob.PlaceLimitOrder(18_000, buyOrder)
+	ob.PlaceLimitOrder(16_000, buyOrderA)
+
+	fmt.Println("ob", ob)
+
+	// fmt.Println("\n Total Bid Orders:", ob.Bids[0].Orders)
+	for i := 0; i < len(ob.bids); i++ {
+		fmt.Printf("\n Bid Price %v: %+v", i, ob.bids[i].Orders)
+	}
+}
+
+func TestPlaceLimitOrder(t *testing.T){
+	ob := NewOrderbook()
+
+	sellOrder := NewOrder(false, 10, 0)
+	sellOrderA := NewOrder(false, 2000, 0)
+
+	ob.PlaceLimitOrder(10_000, sellOrder)
+	ob.PlaceLimitOrder(12_000, sellOrderA)
+
+	fmt.Println("Total Ask volume:", ob.AskTotalVolume())
+	fmt.Println("Total Bid volume:", ob.BidTotalVolume())
+
+	assert(t, len(ob.Orders), 2)
+	assert(t, ob.Orders[sellOrder.ID], sellOrder)
+	assert(t, ob.Orders[sellOrderA.ID], sellOrderA)
+	assert(t, len(ob.asks), 2)
+}
+
+func TestPlaceMarketOrder(t *testing.T){
+	ob := NewOrderbook()
+
+	// sellOrder := NewOrder(false, 20)
+	sellOrderA := NewOrder(false, 20, 0)
+	
+	// ob.PlaceLimitOrder(10_000, sellOrder)
+	ob.PlaceLimitOrder(10_000, sellOrderA)
+
+	// buyOrder := NewOrder(true, 10)
+	buyOrderA := NewOrder(true, 10, 0)
+
+	// ob.PlaceMarketOrder(buyOrder)
+	matches := ob.PlaceMarketOrder(buyOrderA)
+
+	assert(t, len(matches), 1)
+	assert(t, len(ob.asks), 1)
+	assert(t, ob.AskTotalVolume(), 10.0)
+	assert(t, matches[0].Ask, sellOrderA)
+	assert(t, matches[0].Bid, buyOrderA)
+	assert(t, buyOrderA.IsFilled(), true)
+	
+	fmt.Printf("%+v", matches)
+}
+
+func TestPlaceMarketOrderMultifill(t *testing.T){
+	ob := NewOrderbook()
+
+	buyOrderA := NewOrder(true, 5, 0)
+	buyOrderB := NewOrder(true, 8, 0)
+	buyOrderC := NewOrder(true, 10, 0)
+	buyOrderD := NewOrder(true, 1, 0)
+	
+	ob.PlaceLimitOrder(5_000, buyOrderC)
+	ob.PlaceLimitOrder(10_000, buyOrderA)
+	ob.PlaceLimitOrder(9_000, buyOrderB)
+	ob.PlaceLimitOrder(5_000, buyOrderD)
+
+	assert(t, ob.BidTotalVolume(), 24.00)
+
+	sellOrder := NewOrder(false, 20, 0)
+	matches := ob.PlaceMarketOrder(sellOrder)
+
+	assert(t, ob.BidTotalVolume(), 4.00)
+	assert(t, len(matches), 3)
+	assert(t, len(ob.bids), 1)
+
+	fmt.Println("\n\n bid limits:", ob.BidLimits)
+	fmt.Println("\n top limit:", ob.Bids()[0].Price)
+	fmt.Println("\n bottom limit:", ob.Bids()[len(ob.Bids()) - 1].Price)
+
+	// fmt.Println("\n\n ask limits:", ob.AskLimits)
+	// fmt.Println("\n top limit:", ob.Asks()[0].Price)
+	// fmt.Println("\n bottom limit:", ob.Asks()[len(ob.Asks()) - 1].Price)
+}
+
+func TestCancelOrder(t *testing.T){
+	ob := NewOrderbook()
+
+	buyOrder := NewOrder(true, 4, 0)
+	ob.PlaceLimitOrder(10_000, buyOrder)
+
+	assert(t, ob.BidTotalVolume(), 4.0)
+	assert(t, len(ob.bids), 1)
+	
+	ob.CancelOrder(buyOrder)
+	assert(t, ob.BidTotalVolume(), 0.0)
+	assert(t, len(ob.bids), 0)
+
+	_, ok := ob.Orders[buyOrder.ID]
+	assert(t, ok, false)
+}

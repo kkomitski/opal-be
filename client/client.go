@@ -195,3 +195,24 @@ func (c *Client) CancelOrder(orderID int64) error {
 	fmt.Printf("\n\n Total cancelled orders: %v \n\n", c.cancelledOrders)
 	return nil
 }
+
+func (c *Client) GetTrades(market string) (*server.GetTradesResponse , error) {
+	e := Endpoint + "/trades/" + market
+
+	req, err := http.NewRequest(http.MethodGet, e, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	trades := &server.GetTradesResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(trades); err != nil {
+		return nil, err
+	}
+
+	return trades, nil
+}	

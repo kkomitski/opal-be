@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	tick = 1 * time.Millisecond
+	tick = 1 * time.Second
 	myAsks = make(map[float64]int64)
 	myBids = make(map[float64]int64)
 )

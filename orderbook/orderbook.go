@@ -10,6 +10,13 @@ import (
 	"github.com/kkomitski/exchange/utils"
 )
 
+type Trade struct {
+    Price float64
+    Bid bool
+    Timestamp int64
+    Size float64
+}
+
 type Match struct {
     Ask        *Order
     Bid        *Order
@@ -199,6 +206,8 @@ type Orderbook struct {
     asks []*Limit
     bids []*Limit
 
+    Trades []*Trade
+
     AskLimits map[float64]*Limit `json:"askLimits"`
     BidLimits map[float64]*Limit `json:"bidLimits"`
 
@@ -211,6 +220,9 @@ func NewOrderbook() *Orderbook {
     return &Orderbook{
         asks:      []*Limit{},
         bids:      []*Limit{},
+
+        Trades:    []*Trade{},
+
         AskLimits: make(map[float64]*Limit),
         BidLimits: make(map[float64]*Limit),
         Orders:    make(map[int64]*Order),
@@ -258,6 +270,17 @@ func (ob *Orderbook) PlaceMarketOrder(o *Order) []Match {
         str := fmt.Sprintf("- Bid UID: %v | Ask UID: %v | SizeFilled: %.2f | Price: %.2f", matches[i].Bid.UserID, matches[i].Ask.UserID, matches[i].SizeFilled, matches[i].Price)
 
         fmt.Println(utils.PrintColor("green", str))
+    }
+
+    for _, match := range matches {
+        trade := &Trade{
+            Price: match.Price,
+            Size: match.SizeFilled,
+            Timestamp: time.Now().UnixNano(),
+            Bid: o.Bid,
+        }
+
+        ob.Trades = append(ob.Trades, trade)
     }
 
     return matches

@@ -67,7 +67,11 @@ type (
 		Price float64
 		Size float64
 		ID int64
-	}	
+	}
+
+	APIError struct {
+		Error string
+	}
 )
 
 func StartServer() {
@@ -120,9 +124,12 @@ func StartServer() {
 
 	e.GET("/orderbook", ex.getOrderBook)
 	e.GET("/balance", ex.getBalance)
+
+	e.GET("/trades/:market", ex.handleGetTrades)
 	
 	e.POST("/order", ex.handlePlaceOrder)
 	e.DELETE("/order/:id", ex.cancelOrder)
+
 
 	fmt.Printf("%+v", client)
 
@@ -577,4 +584,18 @@ func (ex *Exchange) handleGetBestAsk(c echo.Context) error {
 	bestAsk := ob.Asks()[0]
 
 	return c.JSON(http.StatusOK, bestAsk)
+}
+
+type GetTradesResponse struct {
+	Trades []*orderbook.Trade
+}
+
+func (ex *Exchange) handleGetTrades(c echo.Context) error {
+	market := Market(c.Param("market"))
+	ob, ok := ex.orderbooks[market]
+	if ! ok {
+		return c.JSON(http.StatusBadRequest, APIError{Error: "Orderbook not found"})
+	}
+
+	return c.JSON(http.StatusOK, ob.Trades)
 }

@@ -1,0 +1,3 @@
+- Separate out Server and Orderbook and setup Kafka for communication between the Two
+
+- 

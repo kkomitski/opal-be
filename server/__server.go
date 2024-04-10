@@ -12,11 +12,9 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	"os"
 	"strconv"
 	"sync"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -75,23 +73,6 @@ type (
 		Error string
 	}
 )
-
-func StartProducer(){
-	// topic := "HVSE"
-
-	// PRODUCER
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-		"client.id":         "api-producer",
-		"acks":              "all",
-	})
-	if err != nil {
-		fmt.Printf("Failed to create producer: %s\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Printf("Producer: %+v\n", p)
-}
 
 func StartServer() {
 	e := echo.New()
